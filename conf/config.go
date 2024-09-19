@@ -4,7 +4,6 @@ import (
 	"gopkg.in/ini.v1"
 	"os"
 	"path/filepath"
-	"reflect"
 )
 
 var cfg *ini.File
@@ -19,10 +18,10 @@ func InitConfig() {
 		Fatal("config ERROR:", err)
 	}
 
-	loadConfigSection(&Log)
-	loadConfigSection(&Redis)
-	loadConfigSection(&MySQL)
-	loadConfigSection(&Fiber)
+	loadConfigSection("Log", &Log)
+	loadConfigSection("Redis", &Redis)
+	loadConfigSection("MySQL", &MySQL)
+	loadConfigSection("Fiber", &Fiber)
 
 	for _, fn := range afterConfigFn {
 		fn()
@@ -34,15 +33,7 @@ func AfterConfigExec(fn func()) {
 	afterConfigFn = append(afterConfigFn, fn)
 }
 
-func loadConfigSection(v any) {
-	var name string
-
-	if _type := reflect.TypeOf(v); _type.Kind() == reflect.Ptr {
-		name = _type.Elem().String()
-	} else {
-		name = _type.Name()
-	}
-
+func loadConfigSection(name string, v any) {
 	if err := cfg.Section(name).MapTo(v); err != nil {
 		Fatal("config Section: "+name+" ERROR:", err)
 	}
