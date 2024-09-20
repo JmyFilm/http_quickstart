@@ -6,24 +6,34 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var RDB *redis.Client
+var RDB RDbClient
 
 func InitRDB() {
-	RDB = redis.NewClient(&redis.Options{
-		Addr:     conf.Redis.Addr,
-		Password: conf.Redis.Pwd,
-		DB:       conf.Redis.DB,
-	})
-
-	if _, err := RDB.Ping(context.Background()).Result(); err != nil {
-		conf.FatalExt("Redis ERROR", err)
-	}
+	RDB = initRDB(conf.Redis)
 }
 
-func K(keys ...string) string {
-	key := conf.Redis.Prefix
-	for _, k := range keys {
-		key += conf.Redis.Sep + k
+type RDbClient struct {
+	*redis.Client
+	K func(keys ...string) string
+}
+
+func initRDB(config conf.RedisConfig) RDbClient {
+	client := redis.NewClient(&redis.Options{
+		Addr:     config.Addr,
+		Password: config.Pwd,
+		DB:       config.DB,
+	})
+	if _, err := client.Ping(context.Background()).Result(); err != nil {
+		conf.FatalExt("Redis ERROR", err)
 	}
-	return key
+	return RDbClient{
+		Client: client,
+		K: func(keys ...string) string {
+			key := config.Prefix
+			for _, k := range keys {
+				key += config.Sep + k
+			}
+			return key
+		},
+	}
 }

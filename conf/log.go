@@ -44,7 +44,7 @@ func ErrWithStackExt(errPostscript string, err ...any) {
 }
 
 func FatalExt(errPostscript string, err ...any) {
-	doErr(fatalTag, nil, errPostscript, err...)
+	doErr("ERROR", debug.Stack(), errPostscript, err...)
 }
 
 func doErr(tag string, stack []byte, errPostscript string, err ...any) {

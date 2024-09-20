@@ -39,6 +39,22 @@ func loadConfigSection(name string, v any) {
 	}
 }
 
+type MySQLConfig struct {
+	Addr string
+	User string
+	Pwd  string
+	DB   string
+}
+type RedisConfig struct {
+	Addr   string
+	Pwd    string
+	DB     int
+	Prefix string
+	Sep    string
+}
+
+// ========= Config Item =========
+
 var Log = struct {
 	FilePath         string
 	MaxSize          int
@@ -46,21 +62,9 @@ var Log = struct {
 	StatusTickerTime int
 }{}
 
-var Redis = struct {
-	Addr   string
-	Pwd    string
-	DB     int
-	Prefix string
-	Sep    string
-}{}
+var Redis = RedisConfig{}
 
-var MySQL = struct {
-	User string
-	Pwd  string
-	Host string
-	Port string
-	DB   string
-}{}
+var MySQL = MySQLConfig{}
 
 var Fiber = struct {
 	AppName          string

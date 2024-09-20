@@ -11,16 +11,18 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
-	var err error
+	DB = initDB(conf.MySQL)
+}
 
-	if DB, err = gorm.Open(mysql.Open(fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		conf.MySQL.User, conf.MySQL.Pwd, conf.MySQL.Host, conf.MySQL.Port, conf.MySQL.DB,
+func initDB(config conf.MySQLConfig) *gorm.DB {
+	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
+		"%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		config.User, config.Pwd, config.Addr, config.DB,
 	)), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 		},
-	}); err != nil {
-		conf.FatalExt("MySQL ERROR", err.Error())
-	}
+	})
+	conf.FatalExt("MySQL ERROR", err)
+	return db
 }
