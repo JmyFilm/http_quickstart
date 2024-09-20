@@ -63,5 +63,6 @@ var MySQL = struct {
 }{}
 
 var Fiber = struct {
-	Addr string
+	AppName string
+	Addr    string
 }{}
