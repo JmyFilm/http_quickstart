@@ -7,6 +7,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"time"
 )
@@ -23,6 +24,9 @@ func InitHandler() {
 			conf.ErrWithStack(e)
 		},
 	}), cors.New())
+	if conf.Fiber.RequestLogStdout {
+		app.Use(logger.New())
+	}
 
 	app.All("/health", func(c *fiber.Ctx) error {
 		return c.SendString("ok - " + time.Now().Format(time.DateTime))
