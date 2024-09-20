@@ -17,11 +17,11 @@ func InitHandler() {
 		AppName:      conf.Fiber.AppName,
 		JSONDecoder:  sonic.Unmarshal,
 		JSONEncoder:  sonic.Marshal,
-		ErrorHandler: ErrorHandler,
+		ErrorHandler: errorHandler,
 	})
 	app.Use(recover.New(recover.Config{
 		StackTraceHandler: func(_ *fiber.Ctx, e any) {
-			conf.ErrWithStack(e)
+			conf.ErrWithStackExt("Panic Recover", e)
 		},
 	}), cors.New())
 	if conf.Fiber.RequestLogStdout {
@@ -33,20 +33,20 @@ func InitHandler() {
 	})
 
 	if err := app.Listen(conf.Fiber.Addr); err != nil {
-		conf.Fatal("Fiber ERROR", err)
+		conf.FatalExt("Fiber ERROR", err)
 	}
 }
 
-func ErrorHandler(c *fiber.Ctx, err error) error {
+func errorHandler(c *fiber.Ctx, err error) error {
 	c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
 
 	if e := new(fiber.Error); errors.As(err, &e) {
 		if e.Code >= fiber.StatusInternalServerError {
-			conf.Err(e.Code, c.IP(), c.OriginalURL(), e.Message)
+			conf.ErrExt("HTTP Response Status", e.Code, c.IP(), c.OriginalURL(), e.Message)
 		}
 		return c.Status(e.Code).SendString(fmt.Sprintf("%d %s", e.Code, e.Message))
 	}
 
-	conf.ErrWithStack("ServerError", c.IP(), c.OriginalURL(), err)
+	conf.ErrWithStackExt("ServerError", c.IP(), c.OriginalURL(), err)
 	return c.Status(fiber.StatusInternalServerError).SendString("X_X SERVER ERROR")
 }

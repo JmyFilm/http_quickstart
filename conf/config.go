@@ -15,7 +15,7 @@ func InitConfig() {
 	ex, _ := os.Executable()
 	rp := filepath.Dir(ex)
 	if cfg, err = ini.Load(rp + "/config.ini"); err != nil {
-		Fatal("config ERROR:", err)
+		FatalExt("config ERROR", err)
 	}
 
 	loadConfigSection("Log", &Log)
@@ -35,12 +35,12 @@ func AfterConfigExec(fn func()) {
 
 func loadConfigSection(name string, v any) {
 	if err := cfg.Section(name).MapTo(v); err != nil {
-		Fatal("config Section: "+name+" ERROR:", err)
+		FatalExt("config Section: "+name+" ERROR", err)
 	}
 }
 
 var Log = struct {
-	FileName         string
+	FilePath         string
 	MaxSize          int
 	Debug            bool
 	StatusTickerTime int

@@ -21,6 +21,6 @@ func InitDB() {
 			SingularTable: true,
 		},
 	}); err != nil {
-		conf.Fatal("MySQL ERROR:" + err.Error())
+		conf.FatalExt("MySQL ERROR", err.Error())
 	}
 }

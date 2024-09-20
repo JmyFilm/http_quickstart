@@ -16,7 +16,7 @@ func InitRDB() {
 	})
 
 	if _, err := RDB.Ping(context.Background()).Result(); err != nil {
-		conf.Fatal("Redis ERROR:", err)
+		conf.FatalExt("Redis ERROR", err)
 	}
 }
 
