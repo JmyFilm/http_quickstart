@@ -1,9 +1,10 @@
 package handler
 
 import (
-	"edit-your-project-name/conf"
-	"errors"
-	"fmt"
+	"edit-your-project-name/config"
+	"edit-your-project-name/handler/middleware"
+	"edit-your-project-name/handler/resp"
+	"edit-your-project-name/slog"
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -14,39 +15,47 @@ import (
 
 func InitHandler() {
 	app := fiber.New(fiber.Config{
-		AppName:      conf.Fiber.AppName,
-		JSONDecoder:  sonic.Unmarshal,
-		JSONEncoder:  sonic.Marshal,
-		ErrorHandler: errorHandler,
+		JSONDecoder:           sonic.Unmarshal,
+		JSONEncoder:           sonic.Marshal,
+		ErrorHandler:          middleware.ErrorHandler,
+		DisableStartupMessage: true,
+		ReadTimeout:           time.Second * 10,
 	})
 	app.Use(recover.New(recover.Config{
 		StackTraceHandler: func(_ *fiber.Ctx, e any) {
-			conf.ErrWithStackExt("Panic Recover", e)
+			slog.ErrWithStack("Panic Recover", e)
 		},
-	}), cors.New())
-	if conf.Fiber.RequestLogStdout {
+	}), cors.New(), middleware.Limit(config.Fiber.LimitMax, config.Fiber.LimitExp))
+	if config.Fiber.ListenOption == "HTTPS" {
+		app.Use(middleware.ToHTTPS)
+	}
+	if config.Log.RequestLogStdout {
 		app.Use(logger.New())
 	}
 
+	// ==== HTTP Methods Began
+
 	app.All("/health", func(c *fiber.Ctx) error {
-		return c.SendString("ok - " + time.Now().Format(time.DateTime))
+		return resp.Suc(c, "ok - "+time.Now().Format(time.DateTime))
 	})
 
-	if err := app.Listen(conf.Fiber.Addr); err != nil {
-		conf.FatalExt("Fiber ERROR", err)
-	}
-}
+	// ==== HTTP Methods End
 
-func errorHandler(c *fiber.Ctx, err error) error {
-	c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
-
-	if e := new(fiber.Error); errors.As(err, &e) {
-		if e.Code >= fiber.StatusInternalServerError {
-			conf.ErrExt("HTTP Response Status", e.Code, c.IP(), c.OriginalURL(), e.Message)
+	switch config.Fiber.ListenOption {
+	case "HTTP":
+		if err := app.Listen(config.Fiber.HTTPListenAddr); err != nil {
+			slog.Fatal("API HTTP Listen ERROR", err)
 		}
-		return c.Status(e.Code).SendString(fmt.Sprintf("%d %s", e.Code, e.Message))
+	case "HTTPS":
+		go func() {
+			if err := app.Listen(config.Fiber.HTTPListenAddr); err != nil {
+				slog.Fatal("API HTTP Listen ERROR", err)
+			}
+		}()
+		if err := app.ListenTLS(config.Fiber.HTTPSListenAddr, config.Fiber.TLSCertFile, config.Fiber.TLSKeyFile); err != nil {
+			slog.Fatal("API HTTPS Listen ERROR", err)
+		}
+	default:
+		slog.Fatal("Config Fiber.ListenOption expect HTTP or HTTPS, but:", config.Fiber.ListenOption)
 	}
-
-	conf.ErrWithStackExt("ServerError", c.IP(), c.OriginalURL(), err)
-	return c.Status(fiber.StatusInternalServerError).SendString("X_X SERVER ERROR")
 }

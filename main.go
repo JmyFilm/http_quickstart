@@ -1,15 +1,18 @@
 package main
 
 import (
-	"edit-your-project-name/conf"
-	"edit-your-project-name/db"
+	"edit-your-project-name/config"
+	"edit-your-project-name/data"
 	"edit-your-project-name/handler"
+	"edit-your-project-name/slog"
+	"edit-your-project-name/utils"
 )
 
 func main() {
-	conf.InitConfig()
-	conf.InitLog()
-	db.InitRDB()
-	db.InitDB()
+	config.InitConfig()
+	utils.InitNo()
+	slog.InitLog()
+	data.InitRDB()
+	data.InitDB()
 	handler.InitHandler()
 }
