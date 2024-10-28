@@ -13,6 +13,14 @@ import (
 	"time"
 )
 
+func handler(app *fiber.App) {
+	app.All("/health", func(c *fiber.Ctx) error {
+		return resp.Suc(c, "ok - "+time.Now().Format(time.DateTime))
+	})
+}
+
+// ====^
+
 func InitHandler() {
 	app := fiber.New(fiber.Config{
 		JSONDecoder:           sonic.Unmarshal,
@@ -33,13 +41,7 @@ func InitHandler() {
 		app.Use(logger.New())
 	}
 
-	// ==== HTTP Methods Began
-
-	app.All("/health", func(c *fiber.Ctx) error {
-		return resp.Suc(c, "ok - "+time.Now().Format(time.DateTime))
-	})
-
-	// ==== HTTP Methods End
+	handler(app)
 
 	switch config.Fiber.ListenOption {
 	case "HTTP":

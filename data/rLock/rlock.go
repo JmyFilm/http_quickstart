@@ -5,13 +5,12 @@ import (
 	"edit-your-project-name/slog"
 	"edit-your-project-name/utils"
 	"github.com/bwmarrin/snowflake"
-	"strconv"
 	"time"
 )
 
 // Lock 尝试获得并发锁
-func Lock(uid uint64) (ok bool, lock snowflake.ID) {
-	key := data.RDB.K("rLock", strconv.FormatUint(uid, 10))
+func Lock(uid string) (ok bool, lock snowflake.ID) {
+	key := data.RDB.K("rLock", uid)
 	lock = utils.No.Generate()
 
 	ok, err := data.RDB.SetNX(data.CTX, key, int64(lock), time.Minute).Result()
@@ -23,14 +22,14 @@ func Lock(uid uint64) (ok bool, lock snowflake.ID) {
 }
 
 const unlockLuaScript = `if redis.call("GET", KEYS[1]) == ARGV[1] then
-        return redis.call("DEL", KEYS[1])
-    else
-        return 0
-    end`
+	return redis.call("DEL", KEYS[1])
+else
+	return 0
+end`
 
 // Unlock 释放并发锁
-func Unlock(uid uint64, lock snowflake.ID) (ok bool) {
-	key := data.RDB.K("rLock", strconv.FormatUint(uid, 10))
+func Unlock(uid string, lock snowflake.ID) (ok bool) {
+	key := data.RDB.K("rLock", uid)
 
 	res, err := data.RDB.Eval(data.CTX, unlockLuaScript, []string{key}, int64(lock)).Result()
 	if err != nil || res.(int64) == 0 {

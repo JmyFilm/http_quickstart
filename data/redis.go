@@ -4,8 +4,8 @@ import (
 	"context"
 	"edit-your-project-name/config"
 	"edit-your-project-name/slog"
-	"fmt"
 	"github.com/redis/go-redis/v9"
+	"strings"
 	"time"
 )
 
@@ -26,8 +26,7 @@ var CTX = context.Background()
 
 type rdbClient struct {
 	*redis.Client
-	K   func(keys ...any) string
-	key string
+	K func(keys ...string) string
 }
 
 func WaitRDBExec(fn func()) {
@@ -63,21 +62,11 @@ func initRDB(config config.RedisConfig) *rdbClient {
 	var _rdbClient = &rdbClient{
 		Client: client,
 	}
-	_rdbClient.K = func(keys ...any) string {
-		if _rdbClient.key != "" {
-			return _rdbClient.key
+	_rdbClient.K = func(keys ...string) string {
+		if config.Prefix != "" {
+			keys = append([]string{config.Prefix}, keys...)
 		}
-
-		_rdbClient.key = config.Prefix
-		for _, k := range keys {
-			if _rdbClient.key == "" {
-				_rdbClient.key += fmt.Sprint(k)
-			} else {
-				_rdbClient.key += config.Sep + fmt.Sprint(k)
-			}
-		}
-
-		return _rdbClient.key
+		return strings.Join(keys, config.Sep)
 	}
 
 	return _rdbClient
