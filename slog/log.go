@@ -35,6 +35,9 @@ func doLog(level string, stack []byte, postscript string, err ...any) {
 	}
 
 	if level == fatalTag {
+		for _, fn := range waitQuitFn {
+			fn()
+		}
 		os.Exit(1)
 	}
 }
