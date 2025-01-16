@@ -1,63 +1,91 @@
 package handler
 
 import (
-	"edit-your-project-name/config"
-	"edit-your-project-name/handler/middleware"
-	"edit-your-project-name/handler/resp"
-	"edit-your-project-name/slog"
+	"PROJECTNAME/conf"
+	"PROJECTNAME/handler/middleware"
+	"PROJECTNAME/xlog"
 	"github.com/bytedance/sonic"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/gofiber/fiber/v3/middleware/logger"
+	"github.com/gofiber/fiber/v3/middleware/recover"
 	"time"
 )
 
 func handler(app *fiber.App) {
-	app.All("/health", func(c *fiber.Ctx) error {
-		return resp.Suc(c, "ok - "+time.Now().Format(time.DateTime))
+	app.All("/", func(c fiber.Ctx) error {
+		return c.Send([]byte(xlog.AppName()))
+	})
+	app.All("/monitoring/heartbeat", func(c fiber.Ctx) error {
+		return c.Send([]byte("ok"))
+	})
+	app.Get("/time", func(c fiber.Ctx) error {
+		return c.Send([]byte(time.Now().Format(time.DateTime)))
 	})
 }
 
 // ====^
 
-func InitHandler() {
+func Init() {
 	app := fiber.New(fiber.Config{
-		JSONDecoder:           sonic.Unmarshal,
-		JSONEncoder:           sonic.Marshal,
-		ErrorHandler:          middleware.ErrorHandler,
-		DisableStartupMessage: true,
-		ReadTimeout:           time.Second * 10,
+		JSONDecoder:                  sonic.Unmarshal,
+		JSONEncoder:                  sonic.Marshal,
+		ErrorHandler:                 middleware.ErrorHandler,
+		DisablePreParseMultipartForm: true,
+		ReadTimeout:                  time.Second * 10,
+		Concurrency:                  conf.Fiber.MaxConns * 1024,
 	})
 	app.Use(recover.New(recover.Config{
-		StackTraceHandler: func(_ *fiber.Ctx, e any) {
-			slog.ErrWithStack("Panic Recover", e)
+		StackTraceHandler: func(_ fiber.Ctx, e any) {
+			xlog.ErrWithStack("Panic Recover", e)
 		},
-	}), cors.New(), middleware.Limit(config.Fiber.LimitMax, config.Fiber.LimitExp))
-	if config.Fiber.ListenOption == "HTTPS" {
+	}), cors.New(), middleware.Limit(conf.Fiber.LimitMax, conf.Fiber.LimitMax, conf.Fiber.LimitKey))
+	if conf.Fiber.ListenOption == "HTTPS" {
 		app.Use(middleware.ToHTTPS)
 	}
-	if config.Log.RequestLogStdout {
+	if conf.Fiber.RequestStdOut {
 		app.Use(logger.New())
 	}
 
 	handler(app)
 
-	switch config.Fiber.ListenOption {
+	switch conf.Fiber.ListenOption {
 	case "HTTP":
-		if err := app.Listen(config.Fiber.HTTPListenAddr); err != nil {
-			slog.Fatal("API HTTP Listen ERROR", err)
+		if err := app.Listen(conf.Fiber.HTTPListenAddr, fiber.ListenConfig{
+			//EnablePrefork:         true,
+			GracefulContext:       xlog.ShutdownCtx,
+			DisableStartupMessage: true,
+			BeforeServeFunc: func(app *fiber.App) error {
+				xlog.Info("HTTP Server Run At", conf.Fiber.HTTPListenAddr)
+				return nil
+			},
+		}); err != nil {
+			xlog.Fatal("API HTTP Listen ERROR", err)
 		}
 	case "HTTPS":
 		go func() {
-			if err := app.Listen(config.Fiber.HTTPListenAddr); err != nil {
-				slog.Fatal("API HTTP Listen ERROR", err)
+			if err := app.Listen(conf.Fiber.HTTPListenAddr, fiber.ListenConfig{
+				//EnablePrefork:         true,
+				GracefulContext:       xlog.ShutdownCtx,
+				DisableStartupMessage: true,
+			}); err != nil {
+				xlog.Fatal("API HTTP Listen ERROR", err)
 			}
 		}()
-		if err := app.ListenTLS(config.Fiber.HTTPSListenAddr, config.Fiber.TLSCertFile, config.Fiber.TLSKeyFile); err != nil {
-			slog.Fatal("API HTTPS Listen ERROR", err)
+		if err := app.Listen(conf.Fiber.HTTPSListenAddr, fiber.ListenConfig{
+			//EnablePrefork:         true,
+			GracefulContext:       xlog.ShutdownCtx,
+			DisableStartupMessage: true,
+			CertFile:              conf.Fiber.TLSCertFile,
+			CertKeyFile:           conf.Fiber.TLSKeyFile,
+			BeforeServeFunc: func(app *fiber.App) error {
+				xlog.Info("HTTPS Server Run At", conf.Fiber.HTTPSListenAddr)
+				return nil
+			},
+		}); err != nil {
+			xlog.Fatal("API HTTPS Listen ERROR", err)
 		}
 	default:
-		slog.Fatal("Config Fiber.ListenOption expect HTTP or HTTPS, but:", config.Fiber.ListenOption)
+		xlog.Fatal("Config ListenOption expect HTTP or HTTPS, but:", conf.Fiber.ListenOption)
 	}
 }

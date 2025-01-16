@@ -1,18 +1,18 @@
 package main
 
 import (
-	"edit-your-project-name/config"
-	"edit-your-project-name/data"
-	"edit-your-project-name/handler"
-	"edit-your-project-name/slog"
-	"edit-your-project-name/utils"
+	"PROJECTNAME/conf"
+	"PROJECTNAME/data"
+	"PROJECTNAME/handler"
+	"PROJECTNAME/utils"
+	"PROJECTNAME/xlog"
 )
 
 func main() {
-	config.InitConfig()
-	utils.InitNo()
-	slog.InitLog()
-	data.InitRDB()
+	conf.Init()
+	utils.InitNo(conf.App.AppId)
+	xlog.Init("v1.0.0") // TODO
 	data.InitDB()
-	handler.InitHandler()
+	data.InitRDB()
+	handler.Init()
 }

@@ -1,25 +1,30 @@
 package utils
 
 import (
-	crand "crypto/rand"
-	"edit-your-project-name/config"
-	"encoding/binary"
 	"github.com/bwmarrin/snowflake"
 	"log"
-	mrand "math/rand"
+	"math/rand"
 )
 
-var No *snowflake.Node
+var sno *snowflake.Node
+var no *snowflake.Node
 
-func InitNo() {
-	var err error
-	No, err = snowflake.NewNode(config.App.NodeId)
-	log.Fatal("snowflake ERROR", err)
+func init() {
+	sno, _ = snowflake.NewNode(int64(rand.Intn(1024))) // Single deployment
 }
 
-func GetRandNum() uint32 {
-	var seed int64
-	_ = binary.Read(crand.Reader, binary.BigEndian, &seed)
-	r := mrand.New(mrand.NewSource(seed))
-	return r.Uint32()
+func InitNo(node int64) {
+	var err error
+	no, err = snowflake.NewNode(node)
+	if err != nil {
+		log.Fatal("snowflake ERROR ", err)
+	}
+}
+
+func SnowFlakeSId() string {
+	return sno.Generate().Base58() // The length of Base58 is 11
+}
+
+func SnowFlakeId() string {
+	return no.Generate().Base58() // The length of Base58 is 11
 }

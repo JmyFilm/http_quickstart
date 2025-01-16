@@ -1,9 +1,9 @@
 package data
 
 import (
+	"PROJECTNAME/conf"
+	"PROJECTNAME/xlog"
 	"context"
-	"edit-your-project-name/config"
-	"edit-your-project-name/slog"
 	"github.com/redis/go-redis/v9"
 	"strings"
 	"time"
@@ -12,7 +12,7 @@ import (
 var RDB *rdbClient
 
 func InitRDB() {
-	RDB = initRDB(config.Redis)
+	RDB = initRDB(conf.Redis)
 
 	for _, fn := range waitRDBFn {
 		fn()
@@ -49,14 +49,16 @@ func S(s time.Duration) time.Duration {
 	return s * time.Second
 }
 
-func initRDB(config config.RedisConfig) *rdbClient {
+func initRDB(config conf.SRedis) *rdbClient {
 	client := redis.NewClient(&redis.Options{
-		Addr:     config.Addr,
-		Password: config.Pwd,
-		DB:       config.DB,
+		Addr:        config.Addr,
+		Password:    config.Pwd,
+		DB:          config.DB,
+		PoolSize:    config.PoolSize,
+		DialTimeout: time.Duration(config.DialTimeout) * time.Second,
 	})
 	if _, err := client.Ping(context.Background()).Result(); err != nil {
-		slog.Fatal(slog.PS("Redis", config.Addr, "ERROR"), err)
+		xlog.Fatal(xlog.PS("Redis", config.Addr, "ERROR"), err)
 	}
 
 	var _rdbClient = &rdbClient{
@@ -69,5 +71,6 @@ func initRDB(config config.RedisConfig) *rdbClient {
 		return strings.Join(keys, config.Sep)
 	}
 
+	xlog.Info("Redis", config.Addr, "Time:", _rdbClient.Time(CTX).Val())
 	return _rdbClient
 }
