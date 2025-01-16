@@ -1,4 +1,4 @@
-## Go_Http_QuickStart
+## Go Http QuickStart
 
 ### 使用
 1. 全局替换文件中的`PROJECTNAME`为你的项目名
