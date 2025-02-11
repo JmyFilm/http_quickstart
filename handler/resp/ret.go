@@ -13,18 +13,19 @@ type Pattern struct {
 }
 
 func Suc(c fiber.Ctx, data any) error {
-	c.Response().Header.SetContentType(fiber.MIMEApplicationJSON)
 	return c.JSON(Pattern{
 		Code: 1,
-		Msg:  "成功",
 		Data: data,
 	})
 }
 
 func Err(c fiber.Ctx, msg ...any) error {
-	c.Response().Header.SetContentType(fiber.MIMEApplicationJSON)
 	return c.JSON(Pattern{
 		Code: -1,
 		Msg:  strings.TrimRight(fmt.Sprintln(msg...), "\n"),
 	})
+}
+
+func Raw(c fiber.Ctx, body []byte) error {
+	return c.Send(body)
 }

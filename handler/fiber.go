@@ -12,20 +12,6 @@ import (
 	"time"
 )
 
-func handler(app *fiber.App) {
-	app.All("/", func(c fiber.Ctx) error {
-		return c.Send([]byte(xlog.AppName()))
-	})
-	app.All("/monitoring/heartbeat", func(c fiber.Ctx) error {
-		return c.Send([]byte("ok"))
-	})
-	app.Get("/time", func(c fiber.Ctx) error {
-		return c.Send([]byte(time.Now().Format(time.DateTime)))
-	})
-}
-
-// ====^
-
 func Init() {
 	app := fiber.New(fiber.Config{
 		JSONDecoder:                  sonic.Unmarshal,
@@ -39,7 +25,7 @@ func Init() {
 		StackTraceHandler: func(_ fiber.Ctx, e any) {
 			xlog.ErrWithStack("Panic Recover", e)
 		},
-	}), cors.New(), middleware.Limit(conf.Fiber.LimitMax, conf.Fiber.LimitMax, conf.Fiber.LimitKey))
+	}), cors.New(), middleware.Limit(conf.Fiber.LimitMax, conf.Fiber.LimitMax, conf.Fiber.LimitKey, conf.App.DebugMode))
 	if conf.Fiber.ListenOption == "HTTPS" {
 		app.Use(middleware.ToHTTPS)
 	}

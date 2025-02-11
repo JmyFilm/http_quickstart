@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"PROJECTNAME/conf"
 	"PROJECTNAME/handler/resp"
 	"PROJECTNAME/xlog"
 	"errors"
@@ -31,8 +30,8 @@ func ToHTTPS(c fiber.Ctx) error {
 	return c.Next()
 }
 
-func Limit(max, exp int, key string) fiber.Handler {
-	if conf.App.DebugMode {
+func Limit(max, exp int, key string, needSkip bool) fiber.Handler {
+	if needSkip {
 		return func(c fiber.Ctx) error {
 			return c.Next()
 		}
@@ -49,7 +48,7 @@ func Limit(max, exp int, key string) fiber.Handler {
 		Expiration: time.Duration(exp) * time.Second,
 		KeyGenerator: func(c fiber.Ctx) string {
 			if key != "" {
-				if conf.Fiber.LimitKey == fiber.HeaderXForwardedFor {
+				if key == fiber.HeaderXForwardedFor {
 					if len(c.IPs()) > 0 {
 						return c.IPs()[0]
 					}

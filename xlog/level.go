@@ -3,7 +3,6 @@ package xlog
 import (
 	"PROJECTNAME/conf"
 	"fmt"
-	"log"
 	"runtime/debug"
 )
 
@@ -16,25 +15,25 @@ func Debug(info ...any) {
 	if !conf.Log.DebugInfo {
 		return
 	}
-	log.Println(append([]any{fmt.Sprint("[", debugTag, "]")}, info...)...)
+	infoLog.Println(append([]any{fmt.Sprint("[", debugTag, "]")}, info...)...)
 }
 
 func Info(info ...any) {
-	log.Println(append([]any{fmt.Sprint("[", infoTag, "]")}, info...)...)
+	infoLog.Println(append([]any{fmt.Sprint("[", infoTag, "]")}, info...)...)
 }
 
 func Err(postscript string, err ...any) {
-	logging(errorTag, nil, postscript, err...)
+	logging(errorLog, errorTag, nil, postscript, err...)
 }
 
 func ErrWithStack(postscript string, err ...any) {
-	logging(errorTag, debug.Stack(), postscript, err...)
+	logging(errorLog, errorTag, debug.Stack(), postscript, err...)
 }
 
 func Fatal(postscript string, err ...any) {
-	logging(fatalTag, nil, postscript, err...)
+	logging(errorLog, fatalTag, nil, postscript, err...)
 }
 
 func FatalWithStack(postscript string, err ...any) {
-	logging(fatalTag, debug.Stack(), postscript, err...)
+	logging(errorLog, fatalTag, debug.Stack(), postscript, err...)
 }

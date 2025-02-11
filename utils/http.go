@@ -8,7 +8,7 @@ import (
 
 type SMap map[string]string
 
-func OkHTTP(method string, url string, header SMap, body io.Reader) (respBody []byte, statusCode int, err error) {
+func HTTPX(method string, url string, header SMap, body io.Reader) (respBody []byte, statusCode int, err error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return respBody, statusCode, err

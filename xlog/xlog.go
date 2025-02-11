@@ -23,6 +23,9 @@ var waitQuitFn []func()
 var ShutdownCtx context.Context
 var shutdownCancelFunc context.CancelFunc
 
+var infoLog *log.Logger
+var errorLog *log.Logger
+
 func init() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
@@ -32,7 +35,7 @@ func init() {
 			fn()
 		}
 		shutdownCancelFunc()
-		log.Println(conf.App.AppName, _version, "STOPPED | RunDuration:", time.Now().Sub(startTime))
+		infoLog.Println(conf.App.AppName, _version, "STOPPED | RunDuration:", time.Now().Sub(startTime))
 		os.Exit(0)
 	}()
 }
@@ -43,15 +46,21 @@ func AppName() string {
 
 func Init(version string) {
 	_version = version
-	log.SetOutput(io.MultiWriter(&lumberjack.Logger{
-		Filename:  conf.Log.FilePath,
-		MaxSize:   conf.Log.MaxSize,
-		LocalTime: true,
-	}, os.Stdout))
 	startTime = time.Now()
 	ShutdownCtx, shutdownCancelFunc = context.WithCancel(context.Background())
-	log.Println(conf.App.AppName, _version, "RUNNING | RunPath:", utils.RunPath())
 
+	infoLog = log.New(io.MultiWriter(&lumberjack.Logger{
+		Filename:  conf.Log.InfoPath,
+		MaxSize:   conf.Log.MaxSize,
+		LocalTime: true,
+	}, os.Stdout), "", log.Ldate|log.Ltime)
+	errorLog = log.New(io.MultiWriter(&lumberjack.Logger{
+		Filename:  conf.Log.ErrPath,
+		MaxSize:   conf.Log.MaxSize,
+		LocalTime: true,
+	}, os.Stdout), "", log.Ldate|log.Ltime)
+
+	infoLog.Println(conf.App.AppName, _version, "RUNNING | RunPath:", utils.RunPath())
 	if conf.App.DebugMode == true {
 		Info("\033[41m!!! App.DebugMode = true !!!\033[0m")
 	}

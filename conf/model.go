@@ -1,7 +1,8 @@
 package conf
 
 type sLog = struct {
-	FilePath  string // 日志路径
+	InfoPath  string // 普通日志路径
+	ErrPath   string // 错误日志路径
 	MaxSize   int    // 轮转日志文件大小上限 MB 0则不限制
 	DebugInfo bool   // 调试日志输出
 }

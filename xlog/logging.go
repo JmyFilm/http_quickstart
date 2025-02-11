@@ -9,7 +9,7 @@ import (
 )
 
 // logging level等级标签 stack堆栈信息 errPostscript错误附言 err错误信息
-func logging(level string, stack []byte, postscript string, err ...any) {
+func logging(logType *log.Logger, level string, stack []byte, postscript string, err ...any) {
 	if err == nil || len(err) == 0 || (len(err) == 1 && err[0] == nil) {
 		return
 	}
@@ -29,9 +29,9 @@ func logging(level string, stack []byte, postscript string, err ...any) {
 	}
 
 	if stack != nil && len(stack) != 0 {
-		log.Printf("[%s] %s < %s | %s:%d\n%s\n", level, postscriptWithErr, funcName, file, line, stack)
+		logType.Printf("[%s] %s < %s | %s:%d\n%s\n", level, postscriptWithErr, funcName, file, line, stack)
 	} else {
-		log.Printf("[%s] %s < %s | %s:%d\n", level, postscriptWithErr, funcName, file, line)
+		logType.Printf("[%s] %s < %s | %s:%d\n", level, postscriptWithErr, funcName, file, line)
 	}
 
 	if level == fatalTag {
