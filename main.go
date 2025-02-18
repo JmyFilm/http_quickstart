@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	conf.Init()
+	conf.Init("")
 	utils.InitNo(conf.App.AppId)
 	xlog.Init("v1.0.0") // TODO
 	data.InitDB()

@@ -1,5 +1,5 @@
-/go.sum
 /.idea
+/go.sum
 /*linux
-/*.exe
-/*.log
+*.exe
+*.log

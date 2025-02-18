@@ -17,16 +17,21 @@ func init() {
 	initialized.Add(1)
 }
 
-func Init() {
+func Init(path string) {
 	var err error
 
-	if cfg, err = ini.Load(findLatestIniFile()); err != nil {
+	if path == "" {
+		path = findLatestIniFile()
+	}
+	if cfg, err = ini.Load(path); err != nil {
 		log.Fatal("config Load ERROR ", err)
 	}
+
 	load()
 	if err := verify(); err != nil {
 		log.Fatal("config Verify ERROR ", err)
 	}
+
 	initialized.Done()
 }
 

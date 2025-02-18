@@ -12,13 +12,13 @@ import (
 var g *gen.Generator
 
 func main() {
-	conf.Init()
+	conf.Init("")
 
 }
 
-func doGen(sMySQL conf.SMySQL, tableName ...string) {
+func doGen(sMySQL conf.SMySQL, outPath string, tableName ...string) {
 	g := gen.NewGenerator(gen.Config{
-		OutPath: "./data/dao",
+		OutPath: outPath,
 		Mode:    gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface,
 	})
 

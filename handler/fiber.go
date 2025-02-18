@@ -33,6 +33,7 @@ func Init() {
 		app.Use(logger.New())
 	}
 
+	baseHandler(app)
 	handler(app)
 
 	switch conf.Fiber.ListenOption {
@@ -74,4 +75,16 @@ func Init() {
 	default:
 		xlog.Fatal("Config ListenOption expect HTTP or HTTPS, but:", conf.Fiber.ListenOption)
 	}
+}
+
+func baseHandler(app *fiber.App) {
+	app.All("/", func(c fiber.Ctx) error {
+		return c.Send([]byte(xlog.AppName()))
+	})
+	app.All("/monitoring/heartbeat", func(c fiber.Ctx) error {
+		return c.Send([]byte("ok"))
+	})
+	app.Get("/time", func(c fiber.Ctx) error {
+		return c.Send([]byte(time.Now().Format(time.DateTime)))
+	})
 }

@@ -68,6 +68,21 @@ func initDB(config conf.SMySQL) *gorm.DB {
 		Now time.Time `gorm:"now"`
 	}{}
 	_ = db.Raw("SELECT now() AS now").Scan(&_now).Error
-	xlog.Info("MySQL", config.Addr, "Time:", _now.Now)
+	outInfo(config.Addr, _now.Now)
 	return db
+}
+
+var outInfoMap map[string]struct{}
+
+func outInfo(addr string, t time.Time) {
+	if outInfoMap == nil {
+		outInfoMap = make(map[string]struct{})
+	}
+
+	if _, ok := outInfoMap[addr]; ok {
+		return
+	}
+
+	outInfoMap[addr] = struct{}{}
+	xlog.Info("MySQL", addr, "Time:", t)
 }
