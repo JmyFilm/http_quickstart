@@ -9,8 +9,6 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var g *gen.Generator
-
 func main() {
 	conf.Init("")
 

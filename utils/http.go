@@ -1,34 +1,28 @@
 package utils
 
 import (
-	"io"
-	"net/http"
+	"github.com/bytedance/sonic"
+	"github.com/gofiber/fiber/v3/client"
 	"time"
 )
 
-type SMap map[string]string
+type Map map[string]string
 
-func HTTPX(method string, url string, header SMap, body io.Reader) (respBody []byte, statusCode int, err error) {
-	req, err := http.NewRequest(method, url, body)
+var cc *client.Client
+
+func init() {
+	cc = client.New().SetTimeout(time.Second * 27).SetJSONMarshal(sonic.Marshal).SetJSONUnmarshal(sonic.Unmarshal)
+}
+
+func HTTP(method string, url string, header, param Map, body any) (respBody []byte, statusCode int, err error) {
+	resp, err := cc.Custom(url, method, client.Config{
+		Body:   body,
+		Header: header,
+		Param:  param,
+	})
 	if err != nil {
 		return respBody, statusCode, err
 	}
-	for k, v := range header {
-		req.Header.Add(k, v)
-	}
 
-	resp, err := (&http.Client{Timeout: time.Second * 27}).Do(req)
-	if resp == nil || err != nil {
-		return respBody, statusCode, err
-	}
-
-	statusCode = resp.StatusCode
-	if resp.Body != nil {
-		defer func() {
-			_ = resp.Body.Close()
-		}()
-		respBody, err = io.ReadAll(resp.Body)
-	}
-
-	return respBody, statusCode, err
+	return resp.Body(), resp.StatusCode(), nil
 }
