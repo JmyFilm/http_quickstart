@@ -2,11 +2,13 @@ package data
 
 import (
 	"PROJECTNAME/conf"
+	"PROJECTNAME/utils"
 	"PROJECTNAME/xlog"
 	"context"
-	"github.com/redis/go-redis/v9"
 	"strings"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 var RDB *rdbClient
@@ -73,4 +75,34 @@ func initRDB(config conf.SRedis) *rdbClient {
 
 	xlog.Info("Redis", config.Addr, "Time:", _rdbClient.Time(CTX).Val())
 	return _rdbClient
+}
+
+func RLock(srcId string, ttl time.Duration) (ok bool, lock string) {
+	key := RDB.K("lock", srcId)
+	lock = utils.SnowFlakeId()
+
+	ok, err := RDB.SetNX(CTX, key, lock, ttl).Result()
+	if err != nil {
+		xlog.Err(xlog.PS("RLock", srcId, "ERROR"), err)
+		return false, lock
+	}
+	return ok, lock
+}
+
+const rUnlockLuaScript = `if redis.call("GET", KEYS[1]) == ARGV[1] then
+	return redis.call("DEL", KEYS[1])
+else
+	return 0
+end`
+
+func RUnlock(srcId string, lock string) bool {
+	key := RDB.K("lock", srcId)
+
+	res, err := RDB.Eval(CTX, rUnlockLuaScript, []string{key}, lock).Result()
+	affected, _ := res.(int64)
+	if err != nil || affected == 0 {
+		xlog.Err(xlog.PS("RUnlock", srcId, lock, "ERROR"), err)
+		return false
+	}
+	return true
 }
